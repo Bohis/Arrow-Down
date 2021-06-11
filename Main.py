@@ -5,76 +5,115 @@ from Arrow import Arrow
 from Circle import Circle
 from random import randint
 
-
+# основной класс игры
 class GameScreen:
+
     def __init__(self):
+        # отслеживание времени
         self.clock = pygame.time.Clock()
+        # размер экрана
         self.size = (800,800)
         
+        # список всех стрелок
         self.arrows = pygame.sprite.Group()
+        # список всех кругов
         self.circles = pygame.sprite.Group()
         
+        # кол-во столбцов
         self.countColumn = 4
+        # у координата спавна стрелок
         self.posSpawnArrowY = 100
+        # у координата спавна кругов
         self.posSpawnCircleY = self.size[1] - 200
-        self.widthArrow = 100
+        # размер спрайта стрелки
+        self.widthArrow = 80
+        # размер спрайта круга
+        self.widthCircle = 100
+
+        # расстояние между спрайтами по x
         self.distanceBetween = 50
+        # время респавна стрелок
         self.spawnArrowTime = 500
 
+        # получение имя папки с спрайтами
         self.gameFolder = os.path.dirname(__file__)
         self.gameFolder = os.path.join(self.gameFolder,"Image")
+        # список имен стрелок
         self.namesArrow = ["DArrow.png","UArrow.png","LArrow.png","RArrow.png"]
+        # имя картинки круга
         self.circlName = "Circle.png"
 
+        # список координат колонок по x
         self.listPoint = [[self.widthArrow * i + (i + 1) * self.distanceBetween,0] for i in range(0,self.countColumn)]
 
+        # инициализация pygame
         pygame.init()
+        # создание экрана
         self.screen = pygame.display.set_mode(self.size)
 
+        # спавн кругов
         self.SpawnCircle()
 
+    # спавн стрелок
     def SpawnArrow(self):
+        # случайный индекс колонки
         randSpawnIndex = randint(0,self.countColumn-1)
 
+        # получение позиции спавна
         pos = self.listPoint[randSpawnIndex]
         pos[1] = self.posSpawnArrowY
 
+        # получение имени файла
         filename = os.path.join(self.gameFolder,self.namesArrow[randSpawnIndex])
         
+        # создание стрелки
         arrow = Arrow(pos, filename, self.widthArrow)
 
+        # добавление стрелки в общий список
         self.arrows.add(arrow)
+        # добавление стрелки в список круга
         self.circles.sprites()[randSpawnIndex].groupArrow.add(arrow)
 
+    # спавн кругов
     def SpawnCircle(self):
         for pos in self.listPoint:
+
+            # получение позиции спавна
             p = pos
             p[1] = self.posSpawnCircleY
 
+            # получение имени файла
             filename = os.path.join(self.gameFolder,self.circlName)
 
-            self.circles.add(Circle(p,filename,self.widthArrow))
+            # добавление круга в общий список
+            self.circles.add(Circle(p,filename,self.widthCircle))
 
+    # проверка выхода стрелки из экрана
     def CheckOutArrow(self):
         for arrow in self.arrows:
             if arrow.CheckBorder(self.size[1]):
+                # уничтожение стрелки и удаление из всех списков
                 arrow.kill()
-                
+    
+    # Провека попадания стрелки в круг, index - номер круга
     def CheckArrowInsideCircle(self, index):
         circle = self.circles.sprites()[index]
         circle.CheckArowInsideCircle()
 
+    # игра
     def LoadGame(self):
         print("start game")
 
         lastSpawn = pygame.time.get_ticks()
 
         while True:
+            # события
             for event in pygame.event.get():
+                # закрытие игры
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     return
-
+                # проверка кнопок для стрелок
                 if event.type == KEYDOWN:
                     if event.key == K_DOWN:
                         self.CheckArrowInsideCircle(0)
@@ -85,25 +124,35 @@ class GameScreen:
                     elif event.key == K_RIGHT:
                         self.CheckArrowInsideCircle(3)
 
-
+            # проверка выхода стрелок 
             self.CheckOutArrow()
 
+            # спавн раз в self.spawnArrowTime
             if pygame.time.get_ticks() - lastSpawn > self.spawnArrowTime:
                 lastSpawn = pygame.time.get_ticks()
                 self.SpawnArrow()
 
+            # вызовы update у всех спрайтов
             self.arrows.update()
             self.circles.update()
 
+            # заливка экрана
             self.screen.fill((50,50,50))
+            
+            # рисовниее спрайтов
             self.arrows.draw(self.screen)
             self.circles.draw(self.screen)
 
+            # обновление экрана
             pygame.display.update()
 
+            # фпс
             self.clock.tick(60)
 
 
+# создание игры, загрузка
 gs = GameScreen()
 gs.LoadGame()
+
+# выход
 pygame.quit()
