@@ -17,9 +17,11 @@ class Circle(pygame.sprite.Sprite):
         self.groupArrow = pygame.sprite.Group()
 
         # задание коллайдера
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect(center = coord)
         # задание центра
         self.rect.center = coord
+
+        self.angle = 0
 
     # проверка на попадание в круг стрелочки и ее удаление
     def CheckArowInsideCircle(self):

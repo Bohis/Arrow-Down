@@ -1,8 +1,11 @@
 import pygame, time, os
 
 from pygame.constants import KEYDOWN, K_DOWN, K_LEFT, K_RIGHT, K_UP
+
 from Arrow import Arrow
 from Circle import Circle
+from SoundReader import SoundReader
+
 from random import randint
 
 # основной класс игры
@@ -33,7 +36,7 @@ class GameScreen:
         # расстояние между спрайтами по x
         self.distanceBetween = 50
         # время респавна стрелок
-        self.spawnArrowTime = 500
+        self.spawnArrowTime = 1000
 
         # получение имя папки с спрайтами
         self.gameFolder = os.path.dirname(__file__)
@@ -54,25 +57,39 @@ class GameScreen:
         # спавн кругов
         self.SpawnCircle()
 
+        self.reader = SoundReader("Sound\\test.wav",self.spawnArrowTime/1000,4)
+        self.sound = pygame.mixer.Sound('Sound\\test.wav')
+
     # спавн стрелок
-    def SpawnArrow(self):
+    def SpawnArrow(self, listData):
         # случайный индекс колонки
-        randSpawnIndex = randint(0,self.countColumn-1)
+        # randSpawnIndex = randint(0,self.countColumn-1)
 
-        # получение позиции спавна
-        pos = self.listPoint[randSpawnIndex]
-        pos[1] = self.posSpawnArrowY
+        middle = sum(listData)/4
 
-        # получение имени файла
-        filename = os.path.join(self.gameFolder,self.namesArrow[randSpawnIndex])
-        
-        # создание стрелки
-        arrow = Arrow(pos, filename, self.widthArrow)
+        listValue = [i > middle for i in listData]
 
-        # добавление стрелки в общий список
-        self.arrows.add(arrow)
-        # добавление стрелки в список круга
-        self.circles.sprites()[randSpawnIndex].groupArrow.add(arrow)
+        for i in range(0,4):
+            if not listValue[i]:
+                continue
+
+
+            randSpawnIndex = i
+
+            # получение позиции спавна
+            pos = self.listPoint[randSpawnIndex]
+            pos[1] = self.posSpawnArrowY
+
+            # получение имени файла
+            filename = os.path.join(self.gameFolder,self.namesArrow[randSpawnIndex])
+            
+            # создание стрелки
+            arrow = Arrow(pos, filename, self.widthArrow)
+
+            # добавление стрелки в общий список
+            self.arrows.add(arrow)
+            # добавление стрелки в список круга
+            self.circles.sprites()[randSpawnIndex].groupArrow.add(arrow)
 
     # спавн кругов
     def SpawnCircle(self):
@@ -105,8 +122,12 @@ class GameScreen:
         print("start game")
 
         lastSpawn = pygame.time.get_ticks()
+        index = 0
+        gameOver = False
 
-        while True:
+        self.sound.play()
+
+        while (not gameOver or len(self.arrows) != 0):
             # события
             for event in pygame.event.get():
                 # закрытие игры
@@ -130,7 +151,12 @@ class GameScreen:
             # спавн раз в self.spawnArrowTime
             if pygame.time.get_ticks() - lastSpawn > self.spawnArrowTime:
                 lastSpawn = pygame.time.get_ticks()
-                self.SpawnArrow()
+
+                if len(self.reader.Calculation()) > index:
+                    self.SpawnArrow(self.reader.Calculation()[index])
+                    index+=1
+                else:
+                    gameOver = True
 
             # вызовы update у всех спрайтов
             self.arrows.update()
@@ -139,7 +165,7 @@ class GameScreen:
             # заливка экрана
             self.screen.fill((50,50,50))
             
-            # рисовниее спрайтов
+            # рисование спрайтов
             self.arrows.draw(self.screen)
             self.circles.draw(self.screen)
 
@@ -147,7 +173,7 @@ class GameScreen:
             pygame.display.update()
 
             # фпс
-            self.clock.tick(60)
+            self.clock.tick(30)
 
 
 # создание игры, загрузка
